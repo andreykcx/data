@@ -27,7 +27,6 @@ cp .env.example .env
    - API: http://localhost:8000 (reachable from other services at `http://api:8000`)
    - Frontend: http://localhost:5173
    - PostgreSQL: localhost:${POSTGRES_PORT:-5432}
-   - Frontend dependencies are installed inside the container; they are kept in the named volume `frontend-node-modules`.
 
 2. Follow logs:
    ```bash
@@ -38,10 +37,6 @@ cp .env.example .env
    ```bash
    make down
    ```
-   - To reset frontend dependencies for a clean install, remove the volume:
-     ```bash
-     docker volume rm data_frontend-node-modules
-     ```
 
 ## Running locally without Docker
 ### Backend (FastAPI)

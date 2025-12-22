@@ -26,3 +26,26 @@ class DatasetUploadResponse(BaseModel):
     model_config = {
         "extra": "forbid",
     }
+
+
+class ModelRequest(BaseModel):
+    """Request body for model training."""
+
+    data: list[DataPoint]
+
+    model_config = {
+        "extra": "forbid",
+    }
+
+
+class ModelResponse(BaseModel):
+    """Regression model result with line data for plotting."""
+
+    slope: float
+    intercept: float
+    r_squared: float
+    line: list[DataPoint]
+
+    model_config = {
+        "extra": "forbid",
+    }

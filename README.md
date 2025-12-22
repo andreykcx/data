@@ -19,6 +19,8 @@ Copy the example file when starting:
 cp .env.example .env
 ```
 
+When running the Docker Compose stack, the API is reachable at `http://api:8000`; local development can override the frontend target with `VITE_API_BASE_URL=http://localhost:8000`.
+
 ## Running with Docker
 1. Build and start the stack:
    ```bash

@@ -52,3 +52,22 @@ def test_upload_dataset_validation_errors(csv_bytes, expected_detail):
 @pytest.fixture
 def sample_csv_bytes() -> bytes:
     return b"x,y\n1,1\n2,4\n3,9\n4,16\n5,25\n"
+
+
+def test_train_model_success():
+    payload = {"data": [{"x": 1.0, "y": 1.0}, {"x": 2.0, "y": 4.0}, {"x": 3.0, "y": 9.0}]}
+
+    response = client.post("/model", json=payload)
+    assert response.status_code == 200
+    body = response.json()
+
+    assert "slope" in body and "intercept" in body and "r_squared" in body
+    assert len(body["line"]) == 2
+    assert body["line"][0]["x"] <= body["line"][1]["x"]
+
+
+def test_train_model_validation_errors():
+    payload = {"data": [{"x": 1.0, "y": 2.0}]}  # only one row
+    response = client.post("/model", json=payload)
+    assert response.status_code == 400
+    assert "At least two" in response.json()["detail"]

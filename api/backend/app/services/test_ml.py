@@ -114,6 +114,25 @@ def test_features_and_target_length_matches(sample_points):
     assert len(targets) == len(sample_points)
 
 
+def test_train_simple_linear_regression_requires_two_rows(sample_points):
+    with pytest.raises(ml.ModelTrainingError):
+        ml.train_simple_linear_regression(sample_points[:1])
+
+
+def test_train_simple_linear_regression_requires_varying_x(sample_points):
+    flat_x = [ml.DataPoint(x=1.0, y=10.0), ml.DataPoint(x=1.0, y=20.0)]
+    with pytest.raises(ml.ModelTrainingError):
+        ml.train_simple_linear_regression(flat_x)
+
+
+def test_train_simple_linear_regression_returns_expected_line(sample_points):
+    result = ml.train_simple_linear_regression(sample_points)
+    assert pytest.approx(result.slope, rel=1e-6) == 10.0
+    assert pytest.approx(result.intercept, rel=1e-6) == 0.0
+    assert result.line[0].x == min(p.x for p in sample_points)
+    assert result.line[1].x == max(p.x for p in sample_points)
+
+
 @pytest.fixture
 def sample_points():
     return [

@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+const dockerDefaultApi = "http://api:8000";
+const envApi = import.meta.env.VITE_API_BASE_URL;
+const isLocalHost = typeof window !== "undefined" && /^localhost$|^127\\.0\\.0\\.1$/.test(window.location.hostname);
+
+// If the env points to the Docker service host but we're browsing locally, prefer localhost automatically.
+const API_BASE_URL =
+  envApi && !(envApi === dockerDefaultApi && isLocalHost) ? envApi : isLocalHost ? "http://localhost:8000" : dockerDefaultApi;
 
 const styles = {
   layout: {
@@ -255,7 +261,7 @@ export default function App() {
             <div>
               Using base URL: <code>{API_BASE_URL}</code>
             </div>
-            <small>Docker default: http://api:8000 • Override locally with VITE_API_BASE_URL</small>
+            <small>Defaults to Docker host; falls back to localhost in browser. Override with VITE_API_BASE_URL.</small>
           </div>
         </div>
       </section>

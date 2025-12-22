@@ -12,7 +12,8 @@ Shared variables live in `.env` (and `.env.example` for reference):
 - `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_PORT`
 - `DATABASE_URL` (used by the API)
 - `API_BASE_URL` (used by the frontend to reach the API)
-- `CORS_ORIGINS` (comma-separated origins the API will allow)
+- `CORS_ORIGINS` (comma-separated origins the API will allow; defaults include `http://localhost:5173` and `http://frontend:5173`)
+- `API_KEY` (optional; if set, upload endpoints require the `x-api-key` header)
 
 Copy the example file when starting:
 ```bash

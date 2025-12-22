@@ -13,6 +13,12 @@ def test_read_root():
     assert response.json() == {"status": "ok"}
 
 
+def test_health_requires_database(monkeypatch):
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    response = client.get("/health")
+    assert response.status_code == 503
+
+
 def test_upload_dataset_success(sample_csv_bytes):
     response = client.post(
         "/datasets/upload",
@@ -24,6 +30,7 @@ def test_upload_dataset_success(sample_csv_bytes):
 
     assert body["rows"] == 5
     assert body["train_rows"] + body["test_rows"] == 5
+    assert body["dataset_id"]
 
     # Deterministic split ensures consistent ordering
     assert body["train"][0] == {"x": 2.0, "y": 4.0}
@@ -47,6 +54,16 @@ def test_upload_dataset_validation_errors(csv_bytes, expected_detail):
 
     assert response.status_code == 400
     assert expected_detail in response.json()["detail"]
+
+
+def test_upload_requires_api_key(monkeypatch, sample_csv_bytes):
+    monkeypatch.setenv("API_KEY", "supersecret")
+    response = client.post(
+        "/datasets/upload",
+        files={"file": ("data.csv", sample_csv_bytes, "text/csv")},
+    )
+    assert response.status_code == 401
+    assert "Invalid or missing API key." in response.json()["detail"]
 
 
 @pytest.fixture

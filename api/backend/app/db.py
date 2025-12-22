@@ -12,6 +12,13 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import OperationalError
 
+try:
+    from alembic import command
+    from alembic.config import Config
+except ImportError:  # pragma: no cover - handled gracefully when Alembic is missing
+    command = None
+    Config = None
+
 logger = logging.getLogger(__name__)
 
 
@@ -52,6 +59,10 @@ def check_database_connection() -> bool:
 
 
 def _get_alembic_config() -> Optional[Config]:
+    if command is None or Config is None:
+        logger.warning("Alembic is not installed; skipping migration setup.")
+        return None
+
     database_url = get_database_url()
     if not database_url:
         logger.warning("DATABASE_URL is not set; skipping migration setup.")
@@ -70,16 +81,21 @@ def _get_alembic_config() -> Optional[Config]:
     return config
 
 
-def run_migrations_with_retry(*, attempts: int = 5, backoff_seconds: int = 2) -> None:
-    config = _get_alembic_config()
+def run_migrations_with_retry(*, attempts: int = 5, backoff_seconds: int = 2) -> bool:
+    try:
+        config = _get_alembic_config()
+    except Exception as exc:  # pragma: no cover - defensive catch-all
+        logger.error("Failed to prepare Alembic configuration: %s", exc, exc_info=True)
+        return False
+
     if config is None:
-        return
+        return False
 
     for attempt in range(1, attempts + 1):
         try:
             command.upgrade(config, "head")
             logger.info("Database migrations applied successfully.")
-            return
+            return True
         except OperationalError as exc:
             logger.warning(
                 "Database not ready (attempt %s/%s): %s",
@@ -87,6 +103,10 @@ def run_migrations_with_retry(*, attempts: int = 5, backoff_seconds: int = 2) ->
                 attempts,
                 exc,
             )
-            if attempt == attempts:
-                raise
             time.sleep(backoff_seconds * attempt)
+        except Exception as exc:  # pragma: no cover - defensive catch-all
+            logger.error("Unexpected migration error: %s", exc, exc_info=True)
+            break
+
+    logger.error("Migrations did not complete after %s attempts; continuing without applying migrations.", attempts)
+    return False

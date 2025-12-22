@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from uuid import UUID
+
 from pydantic import BaseModel, Field
 
 
@@ -17,6 +19,7 @@ class DataPoint(BaseModel):
 class DatasetUploadResponse(BaseModel):
     """Response returned after dataset upload and split."""
 
+    dataset_id: UUID
     rows: int
     train_rows: int
     test_rows: int
@@ -31,6 +34,7 @@ class DatasetUploadResponse(BaseModel):
 class ModelRequest(BaseModel):
     """Request body for model training."""
 
+    dataset_id: UUID | None = None
     data: list[DataPoint]
 
     model_config = {

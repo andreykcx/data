@@ -6,6 +6,8 @@ import time
 from pathlib import Path
 from typing import Optional
 
+from alembic import command
+from alembic.config import Config
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import OperationalError

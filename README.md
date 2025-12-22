@@ -67,9 +67,40 @@ VITE_API_BASE_URL=http://localhost:8000 npm run dev -- --host --port 5173
   make test
   ```
 
-## Production notes
-- Build the frontend for production:
-  ```bash
-  cd frontend && npm install && npm run build
+## Production deployment
+1. Clone the repository and prepare environment files:
+   ```bash
+   git clone <repo-url>
+   cd data
+   cp .env.example .env
+   cp .env.frontend.example .env.frontend
+   ```
+   - `.env` supplies PostgreSQL and API variables (including `DATABASE_URL` and optional `API_KEY`).
+   - `.env.frontend` sets the API base URL for the Vite build (defaults to `http://api:8000`).
+
+2. Launch the production stack with the override file (multi-stage Dockerfiles build the API and frontend images):
+   ```bash
+   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+   ```
+   - API: http://localhost:8000 (waits for Postgres health before starting; runs Alembic migrations on boot)
+   - Frontend: http://localhost:8080
+
+3. Validate the deployment:
+   ```bash
+   curl -f http://localhost:8000/health
+   curl -X POST -F "file=@samples/xy_sample.csv" http://localhost:8000/datasets/upload
+   ```
+   If `API_KEY` is set, include `-H "x-api-key: $API_KEY"` in the upload request.
+
+## Sample CSV for post-deploy checks
+- Location: `samples/xy_sample.csv`
+- Expected format: a header row `x,y` followed by numeric-only rows (integers or decimals) for both columns.
+- Example contents:
+  ```csv
+  x,y
+  1,1
+  2,2
+  3,2.5
   ```
-- You can serve the production build via `npm run preview` or swap the frontend service to an nginx/static image that serves the `dist/` directory.
+
+You can reuse this file to confirm `/datasets/upload` works immediately after deployment.

@@ -59,12 +59,15 @@ services:
       - "5173:5173"
     volumes:
       - ./frontend:/usr/src/app
-    command: npm run dev -- --host --port 5173
+      - frontend-node-modules:/usr/src/app/node_modules
+    command: >
+      sh -c "npm install && npm run dev -- --host --port 5173"
     networks:
       - app-network
 
 volumes:
   db-data:
+  frontend-node-modules:
 
 networks:
   app-network:

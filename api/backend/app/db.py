@@ -81,7 +81,7 @@ def _get_alembic_config() -> Optional[Config]:
     return config
 
 
-def run_migrations_with_retry(*, attempts: int = 5, backoff_seconds: int = 2) -> bool:
+def run_migrations_with_retry(*, attempts: int = 10, backoff_seconds: int = 3) -> bool:
     try:
         config = _get_alembic_config()
     except Exception as exc:  # pragma: no cover - defensive catch-all
@@ -91,6 +91,23 @@ def run_migrations_with_retry(*, attempts: int = 5, backoff_seconds: int = 2) ->
     if config is None:
         return False
 
+    # First, ensure database is ready
+    logger.info("Checking database connectivity before running migrations...")
+    for attempt in range(1, attempts + 1):
+        if check_database_connection():
+            logger.info("Database connection established.")
+            break
+        logger.warning(
+            "Database not ready (attempt %s/%s), waiting...",
+            attempt,
+            attempts,
+        )
+        time.sleep(backoff_seconds * min(attempt, 5))  # Cap the backoff
+    else:
+        logger.error("Database not ready after %s attempts; skipping migrations.", attempts)
+        return False
+
+    # Now run migrations
     for attempt in range(1, attempts + 1):
         try:
             command.upgrade(config, "head")
@@ -98,12 +115,12 @@ def run_migrations_with_retry(*, attempts: int = 5, backoff_seconds: int = 2) ->
             return True
         except OperationalError as exc:
             logger.warning(
-                "Database not ready (attempt %s/%s): %s",
+                "Database migration failed (attempt %s/%s): %s",
                 attempt,
                 attempts,
                 exc,
             )
-            time.sleep(backoff_seconds * attempt)
+            time.sleep(backoff_seconds * min(attempt, 5))  # Cap the backoff
         except Exception as exc:  # pragma: no cover - defensive catch-all
             logger.error("Unexpected migration error: %s", exc, exc_info=True)
             break
